@@ -474,7 +474,7 @@ class CLIP(nn.Module):
 
         # x.shape = [batch_size, n_ctx, transformer.width]
         # take features from the eot embedding (eot_token is the highest number in each sequence)
-        x = hidden[torch.arange(hidden.shape[0]), text.argmax(dim=-1)]
+        x = hidden[torch.arange(hidden.shape[0]), text.argmax(dim=-1)]  # (batch_size, embed_dim)
 
         if return_hidden:
             return x, hidden

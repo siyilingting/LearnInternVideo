@@ -376,7 +376,7 @@ class CLIP4Clip(CLIP4ClipPreTrainedModel):
             token_type_ids = token_type_ids.view(-1, token_type_ids.shape[-1])
             attention_mask = attention_mask.view(-1, attention_mask.shape[-1])
 
-        bs_pair = input_ids.size(0)
+        bs_pair = input_ids.size(0)  # batchsize * vid_num
         ### for naive
         # sequence_hidden = self.clip.encode_text(input_ids).float()
         ### for wti
@@ -386,9 +386,9 @@ class CLIP4Clip(CLIP4ClipPreTrainedModel):
             else:
                 sequence_hidden = self.clip.encode_text(input_ids, return_hidden=True)[1].float()
         else:            
-            sequence_hidden = self.clip.encode_text(input_ids).float()
+            sequence_hidden = self.clip.encode_text(input_ids).float()  # (bs_pair, d_width)
         
-        sequence_hidden = sequence_hidden.view(bs_pair, -1, sequence_hidden.size(-1))
+        sequence_hidden = sequence_hidden.view(bs_pair, -1, sequence_hidden.size(-1))  # (bs_pair, 1, d_width)
 
         return sequence_hidden
 
@@ -422,7 +422,7 @@ class CLIP4Clip(CLIP4ClipPreTrainedModel):
 
     def get_sequence_visual_output(self, input_ids, token_type_ids, attention_mask, video, video_mask, shaped=False, video_frame=-1):
         if shaped is False:
-            input_ids = input_ids.view(-1, input_ids.shape[-1])
+            input_ids = input_ids.view(-1, input_ids.shape[-1]) # (batch_size, vid_num, max_words) -> (batch_size * vid_num, max_words)
             token_type_ids = token_type_ids.view(-1, token_type_ids.shape[-1])
             attention_mask = attention_mask.view(-1, attention_mask.shape[-1])
             video_mask = video_mask.view(-1, video_mask.shape[-1])
@@ -432,7 +432,7 @@ class CLIP4Clip(CLIP4ClipPreTrainedModel):
             video = video.view(b * pair * bs * ts, channel, h, w)
             video_frame = bs * ts
  
-        sequence_output = self.get_sequence_output(input_ids, token_type_ids, attention_mask, shaped=True)
+        sequence_output = self.get_sequence_output(input_ids, token_type_ids, attention_mask, shaped=True)  # (bs_pair, 1, d_width)
         visual_output = self.get_visual_output(video, video_mask, shaped=True, video_frame=video_frame)     
         return sequence_output, visual_output
 
