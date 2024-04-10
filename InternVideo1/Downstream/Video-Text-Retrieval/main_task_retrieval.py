@@ -445,7 +445,7 @@ def eval_epoch(args, model, test_dataloader, device, n_gpu):
         # ----------------------------
         for bid, batch in enumerate(test_dataloader):
             batch = tuple(t.to(device) for t in batch)
-            input_ids, input_mask, segment_ids, video, video_mask = batch
+            input_ids, input_mask, segment_ids, video, video_mask = batch  # (batch, vid_num, max_words), ..., (batch, vid_num, max_frames, 1, 3, H, W),...
 
             if multi_sentence_:
                 # multi-sentences retrieval means: one clip has two or more descriptions.
