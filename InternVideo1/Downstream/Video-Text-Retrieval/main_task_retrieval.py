@@ -36,7 +36,7 @@ def get_args(description='CLIP4Clip on Retrieval Task'):
     parser.add_argument('--val_csv', type=str, default='data/MSR-VTT/anns/MSRVTT_JSFUSION_test.csv', help='')
     parser.add_argument('--data_path', type=str, default='data/caption.pickle', help='data pickle file path')
     # parser.add_argument('--features_path', type=str, default='data/videos_feature.pickle', help='feature path')
-    parser.add_argument('--features_path', type=str, default='s3://video_pub/MSR-VTT/videos', help='feature path')
+    parser.add_argument('--features_path', type=str, default='s3://video_pub/MSR-VTT/videos', help='feature path')  # 放视频的路径
 
     parser.add_argument('--num_thread_reader', type=int, default=4, help='')
     parser.add_argument('--lr', type=float, default=0.0001, help='initial learning rate')
@@ -422,7 +422,7 @@ def eval_epoch(args, model, test_dataloader, device, n_gpu):
     multi_sentence_ = False
     cut_off_points_, sentence_num_, video_num_ = [], -1, -1
     if hasattr(test_dataloader.dataset, 'multi_sentence_per_video') \
-            and test_dataloader.dataset.multi_sentence_per_video:
+            and test_dataloader.dataset.multi_sentence_per_video:  # MSVD等一些数据集存在一对多，MSR-VTT 是 1 对 1
         multi_sentence_ = True
         cut_off_points_ = test_dataloader.dataset.cut_off_points
         sentence_num_ = test_dataloader.dataset.sentence_num

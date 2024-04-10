@@ -93,9 +93,9 @@ class MSRVTT_DataLoader(Dataset):
             words = words + [self.SPECIAL_TOKEN["SEP_TOKEN"]]
 
             input_ids = self.tokenizer.convert_tokens_to_ids(words)
-            input_mask = [1] * len(input_ids)
+            input_mask = [1] * len(input_ids)  # 1有效，0无效
             segment_ids = [0] * len(input_ids)
-            while len(input_ids) < self.max_words:
+            while len(input_ids) < self.max_words:  # pading到最大长度
                 input_ids.append(0)
                 input_mask.append(0)
                 segment_ids.append(0)
@@ -107,12 +107,12 @@ class MSRVTT_DataLoader(Dataset):
             pairs_mask[i] = np.array(input_mask)
             pairs_segment[i] = np.array(segment_ids)
 
-        return pairs_text, pairs_mask, pairs_segment, choice_video_ids
+        return pairs_text, pairs_mask, pairs_segment, choice_video_ids # (vid_num, max_words), (vid_num, max_words), (vid_num, max_words), list of vid_ids
 
     def _get_rawvideo_dec(self, choice_video_ids, s=None, e=None):
         # speed up video decode via decord.
         # video_mask = np.zeros(self.max_frames, dtype=np.long)
-        video_mask = np.zeros((len(choice_video_ids), self.max_frames), dtype=np.long)
+        video_mask = np.zeros((len(choice_video_ids), self.max_frames), dtype=np.long) # (vid_num, max_frames), 1有效，0 无效
         
         # max_video_length = 0
         max_video_length = [0] * len(choice_video_ids)
@@ -120,7 +120,7 @@ class MSRVTT_DataLoader(Dataset):
         # T x 3 x H x W
         # video = np.zeros((self.max_frames, 3, self.image_resolution, self.image_resolution), dtype=np.float)
         video = np.zeros((len(choice_video_ids), self.max_frames, 1, 3,
-                          self.image_resolution, self.image_resolution), dtype=np.float)
+                          self.image_resolution, self.image_resolution), dtype=np.float)  # (vid_num, max_frame, 1, 3, H, W)
 
         if s is None:
             start_time, end_time = None, None
@@ -136,7 +136,7 @@ class MSRVTT_DataLoader(Dataset):
         # video_path = self.video_dict[video_id]
         for i, video_id in enumerate(choice_video_ids):
     
-            video_path = os.path.join(self.features_path, "{}.mp4".format(video_id))
+            video_path = os.path.join(self.features_path, "{}.mp4".format(video_id))  # features_path是放视频文件的路径
 
             if video_path.startswith("s3://"):
                 video_path = video_path.replace('videos', 'MSRVTT_Videos')
@@ -159,14 +159,14 @@ class MSRVTT_DataLoader(Dataset):
 
                 all_pos = list(range(f_start, f_end + 1, t_stride))
                 if len(all_pos) > self.max_frames:
-                    sample_pos = [all_pos[_] for _ in np.linspace(0, len(all_pos) - 1, num=self.max_frames, dtype=int)]
+                    sample_pos = [all_pos[_] for _ in np.linspace(0, len(all_pos) - 1, num=self.max_frames, dtype=int)]  # 等间距采样
                 else:
                     sample_pos = all_pos
 
-                patch_images = [Image.fromarray(f) for f in vreader.get_batch(sample_pos).asnumpy()]
-                patch_images = torch.stack([self.transform(img) for img in patch_images])
+                patch_images = [Image.fromarray(f) for f in vreader.get_batch(sample_pos).asnumpy()]  # 快速抽帧, (T, 3, H, W)
+                patch_images = torch.stack([self.transform(img) for img in patch_images])  # resize、toRGB、归一化等preprocess
                 
-                patch_images = patch_images.unsqueeze(1)
+                patch_images = patch_images.unsqueeze(1)  # (T, 1, 3, H, W)
                 
                 slice_len = patch_images.shape[0]
                 # max_video_length = max_video_length if max_video_length > slice_len else slice_len
@@ -183,9 +183,9 @@ class MSRVTT_DataLoader(Dataset):
             video_mask[i][:v_length] = [1] * v_length
 
         #print(video.shape, video_mask.shape)
-        return video, video_mask
+        return video, video_mask  # (vid_num, max_frames, 1, 3, H, W), (vid_num, max_frames)
     
-    def _get_rawvideo(self, choice_video_ids):
+    def _get_rawvideo(self, choice_video_ids):  # 用cv2方法读取视频
         video_mask = np.zeros((len(choice_video_ids), self.max_frames), dtype=np.long)
         max_video_length = [0] * len(choice_video_ids)
 
@@ -361,7 +361,7 @@ class MSRVTT_TrainDataLoader(Dataset):
     def _get_rawvideo_dec(self, choice_video_ids, s=None, e=None):
         # speed up video decode via decord.
         # video_mask = np.zeros(self.max_frames, dtype=np.long)
-        video_mask = np.zeros((len(choice_video_ids), self.max_frames), dtype=np.long)
+        video_mask = np.zeros((len(choice_video_ids), self.max_frames), dtype=np.long)  # (vid_num, max_frames), 1有效，0 无效
         
         # max_video_length = 0
         max_video_length = [0] * len(choice_video_ids)
@@ -369,7 +369,7 @@ class MSRVTT_TrainDataLoader(Dataset):
         # T x 3 x H x W
         # video = np.zeros((self.max_frames, 3, self.image_resolution, self.image_resolution), dtype=np.float)
         video = np.zeros((len(choice_video_ids), self.max_frames, 1, 3,
-                          self.image_resolution, self.image_resolution), dtype=np.float)
+                          self.image_resolution, self.image_resolution), dtype=np.float)  # (vid_num, max_frames, 1, 3, H, W)
 
         if s is None:
             start_time, end_time = None, None
@@ -432,7 +432,7 @@ class MSRVTT_TrainDataLoader(Dataset):
             video_mask[i][:v_length] = [1] * v_length
 
         #print(video.shape, video_mask.shape)
-        return video, video_mask
+        return video, video_mask  # (vid_num, max_frames, 1, 3, H, W), (vid_num, max_frames)
     
     def _get_rawvideo(self, choice_video_ids):
         video_mask = np.zeros((len(choice_video_ids), self.max_frames), dtype=np.long)
